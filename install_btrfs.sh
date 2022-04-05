@@ -1,4 +1,4 @@
-#!/bin/bash
+#base_btrfns!/bin/bash
 
 # get CPU Vendor
 cpuv = lscpu | grep "Vendor ID" | awk '{ print $3}'
@@ -50,7 +50,7 @@ umount ${mountpoint}
 echo
 echo "mounting btrfs volumes"
 
-mount -o rw,noatime,compress=zstd,subvol=@ ${part} ${mountpoint}
+mount -o rw,noatime,compress=zstd,space_cache=v2,ssd,discard=async,subvol=@ ${part} ${mountpoint}
 
 [[ -d ${mountpoint}/boot/efi ]] || mkdir -p ${mountpoint}/boot/efi
 [[ -d ${mountpoint}/home ]] || mkdir -p ${mountpoint}/home
@@ -58,15 +58,15 @@ mount -o rw,noatime,compress=zstd,subvol=@ ${part} ${mountpoint}
 [[ -d ${mountpoint}/arch/var ]] || mkdir -p ${mountpoint}/var/cache/pacman/pkg
 [[ -d ${mountpoint}/arch/var ]] || mkdir -p ${mountpoint}/var/log
 
-mount -o rw,noatime,compress=zstd,subvol=@home ${part} ${mountpoint}/home
-mount -o rw,noatime,compress=zstd,subvol=@snapshots ${part} ${mountpoint}/.snapshots
-mount -o rw,noatime,compress=zstd,subvol=@pkg ${part} ${mountpoint}/var/cache/pacman/pkg
-mount -o rw,noatime,compress=zstd,subvol=@log ${part} ${mountpoint}/var/log
+mount -o rw,noatime,compress=zstd,space_cache=v2,ssd,discard=async,subvol=@home ${part} ${mountpoint}/home
+mount -o rw,noatime,compress=zstd,space_cache=v2,ssd,discard=async,subvol=@snapshots ${part} ${mountpoint}/.snapshots
+mount -o rw,noatime,compress=zstd,space_cache=v2,ssd,discard=async,subvol=@pkg ${part} ${mountpoint}/var/cache/pacman/pkg
+mount -o rw,noatime,compress=zstd,space_cache=v2,ssd,discard=async,subvol=@log ${part} ${mountpoint}/var/log
 
 echo
 echo "copying and unpacking stage3"
 echo
-pacstrap ${mountpoint} base linux linux-firmware btrfs-progs vim base-devel amd-ucode bash-completion man-pages git
+pacstrap ${mountpoint} base linux linux-firmware btrfs-progs vim amd-ucode bash-completion man-pages git
 
 echo "Mounting boot partitions\n"
 mount ${drive}1 ${mountpoint}/boot/efi
