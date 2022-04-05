@@ -66,7 +66,7 @@ mount -o rw,noatime,compress=zstd,subvol=@log ${part} ${mountpoint}/var/log
 echo
 echo "copying and unpacking stage3"
 echo
-pacstrap ${mountpoint} base linux linux-firmware btrfs-progs vim base-devel amd-ucode bash-completion man-pages
+pacstrap ${mountpoint} base linux linux-firmware btrfs-progs vim base-devel amd-ucode bash-completion man-pages git
 
 echo "Mounting boot partitions\n"
 mount ${drive}1 ${mountpoint}/boot/efi

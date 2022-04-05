@@ -3,7 +3,7 @@
 
 Scripts to help me with installing Arch.
 
-###  base_btrfs.sh 
+###  install_btrfs.sh 
 As the name suggests is for installing Arch with BTRFS.
 
 ### base_uefi.sh
