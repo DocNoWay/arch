@@ -10,7 +10,7 @@ resolution=1920x1080
 run_reflector=false
 aur_helper=true
 install_ly=false
-gen_xprofile=false
+gen_xprofile=true
 windowmanager=sway # options are: sway(wayland) i3(xorg) dwm(xorg)
 
 
@@ -19,10 +19,16 @@ sudo hwclock --systohc
 if [[ $run_reflector = true ]]; then
     sudo reflector -c $country -a 12 --sort rate --save /etc/pacman.d/mirrorlist
 fi
+if [[ $instal_ly=true ]]; then
+    instally
+fi
 if [[ $aur_helper = true ]]; then
     cd /tmp
     git clone https://aur.archlinux.org/paru.git
     cd paru/;makepkg -si --noconfirm;cd
+fi
+if [[ $install_ly = true ]]; then
+    set-xprofile
 fi
 
 # Install fonts
@@ -55,24 +61,20 @@ EOF
     sudo cp ./temp /usr/share/xsessions/dwm.desktop;rm ./temp
 }
 
-install-ly(){
+instally(){
     # Install ly
-    if [[ $install_ly = true ]]; then
-        git clone https://aur.archlinux.org/ly
-        cd ly;makepkg -si
-        sudo systemctl enable ly
-    fi
+    git clone https://aur.archlinux.org/ly
+    cd ly;makepkg -si
+    sudo systemctl enable ly
 }
 
 set-xprofile() {
     # .xprofile
-    if [[ $gen_xprofile = true ]]; then
     cat > ~/.xprofile << EOF
     setxkbmap $kbmap
     nitrogen --restore
     xrandr --output $output --mode $resolution
 EOF
-    fi
 }
 
 # Install packages
@@ -85,8 +87,8 @@ i3)
     sudo pacman -S $i3pkg;;
 dwm)
     sudo pacman -S "xorg firefox pcmanfm"
-    set-xprofile()
-    get-dwm() ;;
+    set-xprofile
+    get-dwm ;;
 esac
 
 
