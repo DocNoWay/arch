@@ -1,5 +1,4 @@
-# arch
-## Arch Linux Installation Files
+# Arch Linux Installation Files
 
 Scripts to help me with installing Arch.
 

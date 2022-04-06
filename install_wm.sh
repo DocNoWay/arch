@@ -7,24 +7,26 @@ output=Virtual-1
 resolution=1920x1080
 
 # Options
+run_reflector=false
 aur_helper=true
-install_ly=true
+install_ly=false
 gen_xprofile=false
 windowmanager=sway # options are: sway(wayland) i3(xorg) dwm(xorg)
 
 
 sudo timedatectl set-ntp true
 sudo hwclock --systohc
-sudo reflector -c $country -a 12 --sort rate --save /etc/pacman.d/mirrorlist
-
+if [[ $run_reflector = true ]]; then
+    sudo reflector -c $country -a 12 --sort rate --save /etc/pacman.d/mirrorlist
+fi
 if [[ $aur_helper = true ]]; then
     cd /tmp
     git clone https://aur.archlinux.org/paru.git
     cd paru/;makepkg -si --noconfirm;cd
-elif
+fi
 
 # Install fonts
-sudo pacman -S --noconfirm dina-font tamsyn-font bdf-unifont ttf-bitstream-vera ttf-croscore ttf-dejavu ttf-droid gnu-free-fonts ttf-ibm-plex ttf-liberation ttf-linux-libertine noto-fonts ttf-roboto tex-gyre-fonts ttf-ubuntu-font-family ttf-anonymous-pro ttf-cascadia-code ttf-fantasque-sans-mono ttf-fira-mono ttf-hack ttf-fira-code ttf-inconsolata ttf-jetbrains-mono ttf-monofur adobe-source-code-pro-fonts cantarell-fonts inter-font ttf-opensans gentium-plus-font ttf-junicode adobe-source-han-sans-otc-fonts adobe-source-han-serif-otc-fonts noto-fonts-cjk noto-fonts-emoji
+sudo pacman -S --noconfirm dina-font tamsyn-font ttf-bitstream-vera ttf-croscore ttf-dejavu ttf-droid gnu-free-fonts ttf-ibm-plex ttf-liberation ttf-linux-libertine noto-fonts ttf-roboto tex-gyre-fonts ttf-ubuntu-font-family ttf-anonymous-pro ttf-cascadia-code ttf-fantasque-sans-mono ttf-fira-mono ttf-hack ttf-fira-code ttf-inconsolata ttf-jetbrains-mono ttf-monofur adobe-source-code-pro-fonts cantarell-fonts inter-font ttf-opensans gentium-plus-font ttf-junicode adobe-source-han-sans-otc-fonts adobe-source-han-serif-otc-fonts noto-fonts-cjk noto-fonts-emoji
 
 get-dwm() {
     # Pull Git repositories and install
@@ -52,14 +54,15 @@ get-dwm() {
 EOF
     sudo cp ./temp /usr/share/xsessions/dwm.desktop;rm ./temp
 }
-#install-ly() {
-#    # Install ly
-#    if [[ $install_ly = true ]]; then
-#        git clone https://aur.archlinux.org/ly
-#        cd ly;makepkg -si
-#        sudo systemctl enable ly
-#    fi
-#}
+
+install-ly(){
+    # Install ly
+    if [[ $install_ly = true ]]; then
+        git clone https://aur.archlinux.org/ly
+        cd ly;makepkg -si
+        sudo systemctl enable ly
+    fi
+}
 
 set-xprofile() {
     # .xprofile
@@ -83,7 +86,7 @@ i3)
 dwm)
     sudo pacman -S "xorg firefox pcmanfm"
     set-xprofile()
-    get-dwm();;
+    get-dwm() ;;
 esac
 
 
