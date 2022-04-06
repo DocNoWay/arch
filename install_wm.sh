@@ -7,11 +7,11 @@ output=Virtual-1
 resolution=1920x1080
 
 # Options
-run_reflector=false
-aur_helper=false
-install_ly=true
+run_reflector=true
+aur_helper=true
+install_ly=false
 gen_xprofile=true
-windowmanager=dwm # options are: sway(wayland) i3(xorg) dwm(xorg)
+windowmanager=i3 # options are: sway(wayland) i3(xorg) dwm(xorg)
 
 
 sudo timedatectl set-ntp true
@@ -36,15 +36,15 @@ EOF
 if [[ $run_reflector = true ]]; then
     sudo reflector -c $country -a 12 --sort rate --save /etc/pacman.d/mirrorlist
 fi
-if [[ $instal_ly=true ]]; then
+if [[ $install_ly = true ]]; then
     instally
 fi
 if [[ $aur_helper = true ]]; then
     cd /tmp
-    git clone https://aur.archlinux.org/paru.git
-    cd paru/;makepkg -si --noconfirm;cd
+    git clone https://aur.archlinux.org/yay.git
+    cd yay/;makepkg -si --noconfirm;cd
 fi
-if [[ $install_ly = true ]]; then
+if [[ $get_xprofile = true ]]; then
     set-xprofile
 fi
 
@@ -81,14 +81,16 @@ EOF
 
 # Install packages
 swaypkg="sway swaybg waybar foot kitty swayidle swaylock firefox wofi pcmanfm"
-i3pkg="i3-gaps polybar xorg firefox polkit-gnome nitrogen lxappearance pcmanfm"
+i3pkg="i3 xorg firefox polkit-gnome nitrogen lxappearance pcmanfm"
+echo $swaypkg
+echo $i3pkg
 case $windowmanager in
 sway) 
-    sudo pacman -S $swaypkg;;
+    sudo pacman -S --noconfirm $swaypkg;;
 i3)
-    sudo pacman -S $i3pkg;;
+    sudo pacman -S --noconfirm $i3pkg;;
 dwm)
-    sudo pacman -S "xorg firefox pcmanfm" ;
+    sudo pacman -S --noconfirm xorg firefox pcmanfm ;
     instally ;
     get-dwm ;
    set-xprofile ;;
