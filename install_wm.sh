@@ -9,9 +9,9 @@ resolution=1920x1080
 # Options
 run_reflector=true
 aur_helper=true
-install_lightdm=true
-gen_xprofile=true
-windowmanager=i3 # options are: sway(wayland) i3(xorg) dwm(xorg)
+install_lightdm=false
+gen_xprofile=false
+windowmanager=sway # options are: sway(wayland) i3(xorg) dwm(xorg)
 
 
 sudo timedatectl set-ntp true
@@ -79,17 +79,16 @@ EOF
 
 
 # Install packages
-swaypkg="sway swaybg waybar foot kitty swayidle swaylock firefox wofi pcmanfm"
-i3pkg="i3 xorg firefox polkit-gnome nitrogen lxappearance arandr terminator picom dmenu rofi pcmanfm python-requests gnome-system-monitor pacman-contrib playerctl pavucontrol python-dbus dunst 
-echo $swaypkg
-echo $i3pkg
+swaypkg="sway swaybg waybar foot kitty swayidle swaylock qutebrowser bemenu pcmanfm xwayland"
+i3pkg="i3 xorg firefox polkit-gnome nitrogen lxappearance arandr terminator picom dmenu rofi pcmanfm python-requests gnome-system-monitor pacman-contrib playerctl pavucontrol python-dbus dunst"
+
 case $windowmanager in
 sway) 
     sudo pacman -S --noconfirm $swaypkg;;
 i3)
     sudo pacman -S --noconfirm $i3pkg;;
 dwm)
-    sudo pacman -S --noconfirm xorg firefox pcmanfm ;
+    sudo pacman -S --noconfirm xorg qutebrowser pcmanfm ;
     inst_ldm ;
     get-dwm ;
    set-xprofile ;;

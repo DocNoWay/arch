@@ -66,7 +66,7 @@ mount -o rw,noatime,compress=zstd,space_cache=v2,ssd,discard=async,subvol=@log $
 echo
 echo "copying and unpacking stage3"
 echo
-pacstrap ${mountpoint} base linux linux-firmware btrfs-progs vim amd-ucode bash-completion man-pages git
+pacstrap ${mountpoint} base linux linux-firmware btrfs-progs vim amd-ucode bash-completion man-pages man-db git
 
 echo "Mounting boot partitions\n"
 mount ${EFI} ${mountpoint}/boot/efi
