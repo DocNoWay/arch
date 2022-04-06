@@ -4,8 +4,8 @@
 cpuv = lscpu | grep "Vendor ID" | awk '{ print $3}'
 
 drive=/dev/sda
-EFI=/dev/sda1
-part=/dev/sda2
+EFI=$drive1
+part=$drive2
 mountpoint=/mnt/
 stick=/mnt/usb/
 
@@ -38,7 +38,7 @@ mkfs.btrfs -f -L "btrfs_pool" ${part}
 echo
 echo "making btrfs mountpoints"
 echo
-mount ${drive}2 ${mountpoint}
+mount ${part} ${mountpoint}
 btrfs sub create ${mountpoint}/@
 btrfs sub create ${mountpoint}/@home
 btrfs sub create ${mountpoint}/@pkg
@@ -69,7 +69,7 @@ echo
 pacstrap ${mountpoint} base linux linux-firmware btrfs-progs vim amd-ucode bash-completion man-pages git
 
 echo "Mounting boot partitions\n"
-mount ${drive}1 ${mountpoint}/boot/efi
+mount ${EFI} ${mountpoint}/boot/efi
 genfstab -U ${mountpoint} >> ${mountpoint}/etc/fstab
 cat ${mountpoint}/etc/fstab
 read -p "Press enter to continue"

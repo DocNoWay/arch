@@ -7,4 +7,7 @@ Scripts to help me with installing Arch.
 As the name suggests is for installing Arch with BTRFS.
 
 ### base_uefi.sh
-does all the rest what the first script does not.
+Does all the rest what the first script does not.
+
+## install_wm.sh
+A script to install sway or i3 or dwm.
