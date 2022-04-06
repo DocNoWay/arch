@@ -8,14 +8,31 @@ resolution=1920x1080
 
 # Options
 run_reflector=false
-aur_helper=true
-install_ly=false
+aur_helper=false
+install_ly=true
 gen_xprofile=true
-windowmanager=sway # options are: sway(wayland) i3(xorg) dwm(xorg)
+windowmanager=dwm # options are: sway(wayland) i3(xorg) dwm(xorg)
 
 
 sudo timedatectl set-ntp true
 sudo hwclock --systohc
+
+# function for installing ly
+instally() {
+    git clone https://aur.archlinux.org/ly
+    cd ly;makepkg -si
+    sudo systemctl enable ly
+}
+
+# create a .xprofile
+set-xprofile() {
+    cat > ~/.xprofile << EOF
+    setxkbmap $kbmap
+    nitrogen --restore
+    xrandr --output $output --mode $resolution
+EOF
+}
+
 if [[ $run_reflector = true ]]; then
     sudo reflector -c $country -a 12 --sort rate --save /etc/pacman.d/mirrorlist
 fi
@@ -61,21 +78,6 @@ EOF
     sudo cp ./temp /usr/share/xsessions/dwm.desktop;rm ./temp
 }
 
-instally(){
-    # Install ly
-    git clone https://aur.archlinux.org/ly
-    cd ly;makepkg -si
-    sudo systemctl enable ly
-}
-
-set-xprofile() {
-    # .xprofile
-    cat > ~/.xprofile << EOF
-    setxkbmap $kbmap
-    nitrogen --restore
-    xrandr --output $output --mode $resolution
-EOF
-}
 
 # Install packages
 swaypkg="sway swaybg waybar foot kitty swayidle swaylock firefox wofi pcmanfm"
@@ -86,9 +88,10 @@ sway)
 i3)
     sudo pacman -S $i3pkg;;
 dwm)
-    sudo pacman -S "xorg firefox pcmanfm"
-    set-xprofile
-    get-dwm ;;
+    sudo pacman -S "xorg firefox pcmanfm" ;
+    instally ;
+    get-dwm ;
+   set-xprofile ;;
 esac
 
 
