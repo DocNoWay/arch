@@ -17,7 +17,7 @@ windowmanager=i3 # options are: sway(wayland) i3(xorg) dwm(xorg)
 sudo timedatectl set-ntp true
 sudo hwclock --systohc
 
-# function for installing ly
+# function for installing lightdm
 inst_ldm() {
     sudo pacman -S --noconfirm lightdm lightdm-gtk-greeter lightdm-gtk-greeter-settings
     sudo systemctl enable lightdm 
