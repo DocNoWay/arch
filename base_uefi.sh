@@ -16,14 +16,15 @@ echo "archie" > /etc/hostname
 
 # create a user
 useradd -m -G wheel -s /bin/bash -c "Andreas Finck" andreas
-echo andreas:password | chpasswd
+echo "set password for andreas"
+passwd andreas
 # enable root login for group wheel user
 cat /etc/sudoers | sed -i 's/# %wheel/%wheel/g' /etc/sudoers
 
 # You can add xorg to the installation packages, I usually add it at the DE or WM install script
 # You can remove the tlp package if you are installing on a desktop or vm
 
-pacman -S ntp grub grub-btrfs efibootmgr networkmanager network-manager-applet dialog wpa_supplicant mtools dosfstools base-devel linux-headers avahi xdg-user-dirs xdg-utils gvfs gvfs-smb nfs-utils inetutils dnsutils bluez bluez-utils cups hplip alsa-utils pulseaudio pavucontrol bash-completion openssh rsync reflector acpi acpi_call virt-viewer qemu-arch-extra openbsd-netcat iptables-nft ipset firewalld sof-firmware nss-mdns acpid os-prober ntfs-3g terminus-font man-db man-pages
+pacman -S ntp grub grub-btrfs efibootmgr networkmanager network-manager-applet dialog wpa_supplicant mtools dosfstools base-devel linux-headers avahi gvfs gvfs-smb nfs-utils inetutils dnsutils bluez bluez-utils cups alsa-utils pulseaudio pavucontrol bash-completion openssh rsync reflector acpi acpi_call virt-viewer openbsd-netcat ipset firewalld nss-mdns acpid ntfs-3g terminus-font man-db man-pages
 
 # pacman -S --noconfirm xf86-video-amdgpu
 # pacman -S --noconfirm nvidia nvidia-utils nvidia-settings
@@ -31,15 +32,14 @@ pacman -S ntp grub grub-btrfs efibootmgr networkmanager network-manager-applet d
 systemctl enable NetworkManager
 systemctl enable bluetooth
 systemctl enable cups.service
-#systemctl enable sshd
+systemctl enable sshd
 systemctl enable avahi-daemon
-#systemctl enable tlp # You can comment this command out if you didn't install tlp, see above
 systemctl enable reflector.timer
 systemctl enable fstrim.timer
-#systemctl enable libvirtd
 systemctl enable firewalld
 
-echo root:password | chpasswd
+echo "set root password" 
+passwd
 
 # link vi to vim 
 echo "#Some usefull aliases" >> /etc/bash.bashrc

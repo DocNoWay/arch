@@ -4,8 +4,8 @@
 cpuv = lscpu | grep "Vendor ID" | awk '{ print $3}'
 
 drive=/dev/sda
-EFI=$drive1
-part=$drive2
+EFI=${drive}1
+part=${drive}2
 mountpoint=/mnt/
 stick=/mnt/usb/
 
@@ -66,7 +66,8 @@ mount -o rw,noatime,compress=zstd,space_cache=v2,ssd,discard=async,subvol=@log $
 echo
 echo "copying and unpacking stage3"
 echo
-pacstrap ${mountpoint} base linux linux-firmware btrfs-progs vim amd-ucode bash-completion man-pages man-db git
+pacstrap ${mountpoint} base linux linux-firmware btrfs-progs vim intel-ucode bash-completion man-pages man-db git sudo 
+# change ucode to your CPU vendor
 
 echo "Mounting boot partitions\n"
 mount ${EFI} ${mountpoint}/boot/efi
