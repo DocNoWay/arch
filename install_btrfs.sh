@@ -1,7 +1,7 @@
-#base_btrfns!/bin/bash
+#!/bin/bash
 
 # get CPU Vendor
-cpuv = lscpu | grep "Vendor ID" | awk '{ print $3}'
+#cpuv = lscpu | grep "Vendor ID" | awk '{ print $3}'
 
 drive=/dev/sda
 EFI=${drive}1
@@ -29,12 +29,16 @@ mklabel gpt  \
    name 2 ROOTFS \
    print
 
+
+read -p "Press enter to continue"
+
 sleep 1
 echo "make filesystems"
 echo
 mkfs.vfat -F 32 -n EFI $EFI
 mkfs.btrfs -f -L "btrfs_pool" ${part}
 
+read -p "Press enter to continue"
 echo
 echo "making btrfs mountpoints"
 echo
@@ -63,11 +67,11 @@ mount -o rw,noatime,compress=zstd,space_cache=v2,ssd,discard=async,subvol=@snaps
 mount -o rw,noatime,compress=zstd,space_cache=v2,ssd,discard=async,subvol=@pkg ${part} ${mountpoint}/var/cache/pacman/pkg
 mount -o rw,noatime,compress=zstd,space_cache=v2,ssd,discard=async,subvol=@log ${part} ${mountpoint}/var/log
 
+read -p "Press enter to continue"
 echo
 echo "copying and unpacking stage3"
 echo
 pacstrap ${mountpoint} base linux linux-firmware btrfs-progs vim intel-ucode bash-completion man-pages man-db git sudo 
-# change ucode to your CPU vendor
 
 echo "Mounting boot partitions\n"
 mount ${EFI} ${mountpoint}/boot/efi
