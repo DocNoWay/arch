@@ -79,7 +79,7 @@ EOF
 
 
 # Install packages
-swaypkg="sway swaybg waybar foot kitty swayidle swaylock qutebrowser bemenu pcmanfm xwayland"
+swaypkg="sway swaybg waybar foot kitty swayidle swaylock qutebrowser wofi pcmanfm xorg-xwayland polkit-gnome lxappearance playerctl pavucontrol xorg-xhost"
 i3pkg="i3 xorg firefox polkit-gnome nitrogen lxappearance arandr terminator picom dmenu rofi pcmanfm python-requests gnome-system-monitor pacman-contrib playerctl pavucontrol python-dbus dunst"
 
 case $windowmanager in
