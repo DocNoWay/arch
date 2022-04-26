@@ -1,0 +1,297 @@
+#+author: Andreas Finck
+#+date: <2022-04-25 Mon>
+#+title: Arch Linux Installation
+#+description: Script for installing and configuring Arch Linux.
+
+* Formatting and base install
+:PROPERTIES:
+:header-args: :tangle scripts/archinstall.sh
+:END:
+** Networking
+Probing for network connectivity
+#+BEGIN_SRC shell
+#!/bin/bash
+dhclient
+ping -c 5 archlinux.org
+read -p "Last change to abort. If you press enter installation starts and your hdd will be formated."
+#+END_SRC
+** Variables declarition
+Defining the variables for the harddrive and the partitions and setting up the partition schema.
+#+BEGIN_SRC shell
+drive=/dev/sda
+EFI=${drive}1
+part=${drive}2
+mountpoint=/mnt/
+stick=/mnt/usb/
+#+END_SRC
+** Partitioning
+This is UEFI system partition schema and uses therefore a GBT label.
+The esp/EFI partition is just 50MB and should not contain the kernels and initramdisks.
+It is supposed to be mounted in /boot and will only contain the efi files.
+The second parition will stretch over the remaining disk and hold the btrfs pool.
+#+BEGIN_SRC shell
+parted -a optimal --script $drive -- \
+mklabel gpt  \
+   unit mib \
+   mkpart primary fat32 1 50M  \
+   name 1 EFI \
+   set 1 esp on \
+   mkpart primary btrfs 50M -1 \
+   name 2 ROOTFS \
+   print
+#+END_SRC
+** Creating file sytems
+#+BEGIN_SRC shell
+mkfs.vfat -F 32 -n EFI $EFI
+mkfs.btrfs -f -L "btrfs_pool" ${part}
+#+END_SRC
+** Creating mount points
+The root partition is mounted and btrfs file systems are created.
+Afterwards the root file system is unmounted again.
+#+BEGIN_SRC shell
+mount ${part} ${mountpoint}
+btrfs sub create ${mountpoint}/@
+btrfs sub create ${mountpoint}/@home
+btrfs sub create ${mountpoint}/@pkg
+btrfs sub create ${mountpoint}/@log
+btrfs sub create ${mountpoint}/@snapshots
+umount ${mountpoint}
+#+END_SRC
+** Mounting partitions
+Now the single btrfs partitions/mountpoints are mounted. If the mountpoints don't yet exists, they are created.
+#+BEGIN_SRC shell
+mount -o rw,noatime,compress=zstd,space_cache=v2,ssd,discard=async,subvol=@ ${part} ${mountpoint}
+
+[[ -d ${mountpoint}/boot/efi ]] || mkdir -p ${mountpoint}/boot/efi
+[[ -d ${mountpoint}/home ]] || mkdir -p ${mountpoint}/home
+[[ -d ${mountpoint}/snapshots ]] || mkdir -p ${mountpoint}/.snapshots
+[[ -d ${mountpoint}/arch/var ]] || mkdir -p ${mountpoint}/var/cache/pacman/pkg
+[[ -d ${mountpoint}/arch/var ]] || mkdir -p ${mountpoint}/var/log
+
+mount -o rw,noatime,compress=zstd,space_cache=v2,ssd,discard=async,subvol=@home ${part} ${mountpoint}/home
+mount -o rw,noatime,compress=zstd,space_cache=v2,ssd,discard=async,subvol=@snapshots ${part} ${mountpoint}/.snapshots
+mount -o rw,noatime,compress=zstd,space_cache=v2,ssd,discard=async,subvol=@pkg ${part} ${mountpoint}/var/cache/pacman/pkg
+mount -o rw,noatime,compress=zstd,space_cache=v2,ssd,discard=async,subvol=@log ${part} ${mountpoint}/var/log
+#+END_SRC
+** Installing base system
+Now we are able to pacstrapping the base system. This will install the most important programs needed to run the base system.
+**Adjust to your needs!** In case you don't need BTRFS or vim or use a AMD system.
+#+BEGIN_SRC shell
+pacstrap ${mountpoint} base linux linux-firmware btrfs-progs vim intel-ucode bash-completion man-pages man-db git sudo
+#+END_SRC
+** Mounting the boot partition
+#+BEGIN_SRC shell
+mount ${EFI} ${mountpoint}/boot/efi
+#+END_SRC
+** Create the new fstab
+This will create a new fstab in the new system in order to reflect all changes we have done during installation. The new fstab will be printed to screen to evaluate the layout.
+#+BEGIN_SRC shell
+genfstab -U ${mountpoint} >> ${mountpoint}/etc/fstab
+cat ${mountpoint}/etc/fstab
+read -p "Press enter to continue"
+#+END_SRC
+** Change rooting into the new system
+#+BEGIN_SRC shell
+arch-chroot ${mountpoint}
+#+END_SRC
+* Base configuration
+:PROPERTIES:
+:header-args: :tangle scripts/baseconfig.sh
+:END:
+** Keyboard and time settings
+Load german keyboard layout and set timezone and hardware clock
+#+BEGIN_SRC shell
+#!/bin/bash
+loadkeys de-latin1
+
+ln -sf /usr/share/zoneinfo/Europe/Berlin /etc/localtime
+hwclock --systohc
+#+END_SRC
+** Generate and set locales
+Uncomment german and english locale and generate them.
+Set en_US as default language and the keyboard layout to german.
+Set hostname to archie.
+#+BEGIN_SRC shell
+sed -i '/de_DE.UTF/s/^#//' /etc/locale.gen
+sed -i '/en_US.UTF-8/s/^#//' /etc/locale.gen
+
+locale-gen
+
+echo "LANG=en_US.UTF-8" > /etc/locale.conf
+echo "KEYMAP=de-latin1" > /etc/vconsole.conf
+echo "archie" > /etc/hostname
+#+END_SRC
+** Create user
+Create a local user besides root and assign group wheel and video and set password to "password".
+#+BEGIN_SRC shell
+useradd -m -G wheel,video -s /bin/bash -c "Andreas Finck" andreas
+echo andreas:password | chpasswd
+# enable root login for group wheel user
+cat /etc/sudoers | sed -i 's/# %wheel/%wheel/g' /etc/sudoers
+#+END_SRC
+** Install packages
+You can add xorg to the installation packages, I usually add it at the DE or WM install script
+You can remove the tlp package if you are installing on a desktop or vm
+#+BEGIN_SRC shell
+pacman -S ntp grub grub-btrfs efibootmgr networkmanager network-manager-applet dialog wpa_supplicant mtools dosfstools base-devel linux-headers avahi gvfs gvfs-smb nfs-utils inetutils dnsutils bluez bluez-utils cups alsa-utils pipewire-pulse pavucontrol bash-completion openssh rsync reflector acpi acpi_call virt-viewer openbsd-netcat ipset firewalld nss-mdns acpid ntfs-3g terminus-font man-db man-pages wget curl mpd mpc htop
+#+END_SRC
+Depending on your graphic card install the correct drivers
+pacman -S --noconfirm xf86-video-amdgpu
+pacman -S --noconfirm nvidia nvidia-utils nvidia-settings
+** Enable services
+This is an example of services to be enabled. They don't have to be enabled though, if there not needed.
+#+BEGIN_SRC shell
+systemctl enable NetworkManager
+systemctl enable bluetooth
+systemctl enable cups.service
+systemctl enable sshd
+systemctl enable avahi-daemon
+systemctl enable reflector.timer
+systemctl enable fstrim.timer
+systemctl enable firewalld
+#+END_SRC
+** Set root password
+Set it to "password". Change it after first login.
+#+BEGIN_SRC shell
+echo root:password | chpasswd
+#+END_SRC
+** Some usefull default configurations
+Make usefull changes to bashrc and vimrc.
+#+BEGIN_SRC shell
+echo "#Some usefull aliases" >> /etc/bash.bashrc
+echo "alias vi='vim'" >> /etc/bash.bashrc
+echo "alias ls='ls --color' >> /etc/bash.bashrc
+echo "alias ll='ls -l'" >> /etc/bash.bashrc
+echo "alias la='ls -a'" >> /etc/bash.bashrc
+echo "" >> /etc/bash.bashrc
+echo "export EDITOR='vim'" >> /etc/bash.bashrc
+echo "set number" >>  /etc/vimrc
+echo "set relativenumber" >> /etc/vimrc
+echt "syntax on" >>  /etc/vimrc
+echo "colorscheme elflord" >>  /etc/vimrc
+#+END_SRC
+** Install boot loader
+This command is for UEFI installations only.
+#+BEGIN_SRC shell
+grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB --recheck --removable
+grub-mkconfig -o /boot/grub/grub.cfg
+#+END_SRC
+* WM configuration
+:PROPERTIES:
+:header-args: :tangle scripts/wm-config.sh
+:END:
+** Set variables and options
+Change to your needs!
+#+BEGIN_SRC shell
+#!/bin/bash
+country=Germany
+kbmap=de
+#output=Virtual-1
+output=DP-1
+resolution=2560x1440
+# Options
+run_reflector=true      # configures the reflector archlinux mirror chooser
+aur_helper=true         # Install YAY or not
+install_lightdm=false   # Install lightdm or not
+gen_xprofile=false      # Generate a xprofile for xorg
+windowmanager=sway      # options are: sway(wayland) i3(xorg) dwm(xorg)
+#+END_SRC
+** Time settings
+Use NTP for time setting and set hardware clock to local.
+#+BEGIN_SRC shell
+sudo timedatectl set-ntp true
+sudo hwclock --systohc
+#+END_SRC
+** Lightdm
+Function for installing ligthdm
+#+BEGIN_SRC shell
+inst_ldm() {
+    sudo pacman -S --noconfirm lightdm lightdm-gtk-greeter lightdm-gtk-greeter-settings
+    sudo systemctl enable lightdm
+}
+#+END_SRC
+** Xprofile
+Function to create a xprofile
+#+BEGIN_SRC shell
+set-xprofile() {
+    cat > ~/.xprofile << EOF
+    setxkbmap $kbmap
+    nitrogen --restore
+    xrandr --output $output --mode $resolution
+EOF
+}
+#+END_SRC
+** Run functions
+Run the given function when enabled.
+#+BEGIN_SRC shell
+if [[ $run_reflector = true ]]; then
+    sudo reflector -c $country -a 12 --sort rate --save /etc/pacman.d/mirrorlist
+fi
+if [[ $install_lightdm = true ]]; then
+    inst_ldm
+fi
+if [[ $aur_helper = true ]]; then
+    cd /tmp
+    git clone https://aur.archlinux.org/yay.git
+    cd yay/;makepkg -si --noconfirm;cd
+fi
+if [[ $get_xprofile = true ]]; then
+    set-xprofile
+fi
+#+END_SRC
+** Install fonts
+Install a collection of fonts
+#+BEGIN_SRC shell
+sudo pacman -S --noconfirm dina-font tamsyn-font ttf-bitstream-vera ttf-croscore ttf-dejavu ttf-droid gnu-free-fonts ttf-ibm-plex ttf-liberation ttf-linux-libertine noto-fonts ttf-roboto tex-gyre-fonts ttf-ubuntu-font-family ttf-anonymous-pro ttf-cascadia-code ttf-fantasque-sans-mono ttf-fira-mono ttf-hack ttf-fira-code ttf-inconsolata ttf-jetbrains-mono ttf-monofur adobe-source-code-pro-fonts cantarell-fonts inter-font ttf-opensans gentium-plus-font ttf-junicode adobe-source-han-sans-otc-fonts adobe-source-han-serif-otc-fonts noto-fonts-cjk noto-fonts-emoji python-requests pacman-contrib playerctl pavucontrol archlinux-wallpaper awesome-terminal-fonts ttf-font-awesome
+#+END_SRC
+** Install suckless DWM
+Fetch DWM and needed programs and compile and install them.
+Create a Desktop file for DWM.
+#+BEGIN_SRC shell
+get-dwm() {
+    # Pull Git repositories and install
+    cd /tmp
+    repos=( "dmenu" "dwm" "dwmstatus" "st" "slock" )
+    for repo in ${repos[@]}
+    do
+        git clone git://git.suckless.org/$repo
+        cd $repo;make;sudo make install;cd ..
+    done
+
+    # XSessions and dwm.desktop
+    if [[ ! -d /usr/share/xsessions ]]; then
+        sudo mkdir /usr/share/xsessions
+    fi
+
+    cat > ./temp << "EOF"
+    [Desktop Entry]
+    Encoding=UTF-8
+    Name=Dwm
+    Comment=Dynamic window manager
+    Exec=dwm
+    Icon=dwm
+    Type=XSession
+EOF
+    sudo cp ./temp /usr/share/xsessions/dwm.desktop;rm ./temp
+}
+#+END_SRC
+** Install WM
+Install other WM if choosen in options.
+#+BEGIN_SRC shell
+swaypkg="sway swaybg waybar foot kitty swayidle swaylock qutebrowser wofi pcmanfm xorg-xwayland polkit-gnome lxappearance playerctl pavucontrol xorg-xhost"
+i3pkg="i3 xorg firefox polkit-gnome nitrogen lxappearance arandr terminator picom dmenu rofi pcmanfm python-requests gnome-system-monitor pacman-contrib playerctl pavucontrol python-dbus dunst"
+
+case $windowmanager in
+sway)
+    sudo pacman -S --noconfirm $swaypkg;;
+i3)
+    sudo pacman -S --noconfirm $i3pkg;;
+dwm)
+    sudo pacman -S --noconfirm xorg qutebrowser pcmanfm ;
+    inst_ldm ;
+    get-dwm ;
+   set-xprofile ;;
+esac
+
+printf "\e[1;32mDone! you can now reboot.\e[0m\n"
+#+END_SRC
